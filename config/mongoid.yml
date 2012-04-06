@@ -1,0 +1,14 @@
+development:
+  host: localhost
+  database: beershift_development
+
+test:
+  host: localhost
+  database: beershift_test
+
+production:
+  host: <%= ENV['OPENSHIFT_NOSQL_DB_HOST'] %>
+  port: <%= ENV['OPENSHIFT_NOSQL_DB_PORT'] %>
+  database: <%= ENV['OPENSHIFT_APP_NAME'] %>
+  username: <%= ENV['OPENSHIFT_NOSQL_DB_USERNAME'] %>
+  password: <%= ENV['OPENSHIFT_NOSQL_DB_PASSWORD'] %>

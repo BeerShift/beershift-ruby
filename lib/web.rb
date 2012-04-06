@@ -89,7 +89,7 @@ class BeerShift < Sinatra::Base
     parsed = JSON.parse(response.body)
 
     if parsed['status'] && parsed['status'] == 'success'
-      response
+      JSON.dump(parsed)
     else
       halt 404
     end

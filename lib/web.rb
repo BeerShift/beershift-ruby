@@ -5,7 +5,7 @@ require 'json'
 class BeerShift < Sinatra::Base
 
   set :views, File.expand_path('../../views', __FILE__)
-
+  
   get '/' do 	
     
     @beers = Beer.firehose
@@ -21,14 +21,14 @@ class BeerShift < Sinatra::Base
     user = User.where(:username => username).first
 
     if user
-      JSON.dump({ :username => user.username, :password => user.password })
+      JSON.dump([{ :username => user.username, :password => user.password }])
     else
       halt 404
     end
 
   end
 
-  post '/user' do
+  post '/user/?' do
 
     halt 400 unless params[:username]
     halt 400 unless params[:password]
@@ -96,7 +96,7 @@ class BeerShift < Sinatra::Base
 
   end
 
-  post '/beers' do
+  post '/beers/?' do
 
     halt 400 unless params[:username]
     halt 400 unless params[:beerName]

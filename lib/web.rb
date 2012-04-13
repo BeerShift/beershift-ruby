@@ -62,7 +62,7 @@ class BeerShift < Sinatra::Base
 
   end
 
-  get '/firehose' do
+  get '/firehose/?' do
 
     beers = Beer.firehose
 

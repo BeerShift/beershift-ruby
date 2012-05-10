@@ -13,6 +13,12 @@ class BeerShift < Sinatra::Base
 
   end
 
+  get '/mobile' do
+
+    erb :mobile
+
+  end
+
   get '/user/username/:username' do
     
     halt 400 unless params[:username]

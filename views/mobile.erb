@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Welcome to BeerShift</title>
+    <link rel="SHORTCUT ICON" href="http://www.redhat.com/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" />
+    <script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js"></script>
+
+    <script type="text/javascript">
+        var activeBeer = null;
+
+        var url = localStorage.getItem('url');
+        var username = localStorage.getItem('username');
+        var password = localStorage.getItem('password');
+
+        $(document).bind('pagebeforeshow', function(e, data){
+            if(data.toPage != 'settings'){
+                if(!username){
+                    $.mobile.changePage('#settings');
+                };
+            }
+        });
+
+        $('#firehose').live('pagebeforeshow',function(event){
+            $.mobile.showPageLoadingMsg();
+            $.getJSON(url + '/firehose', function(data){
+                var list = $('<ul data-role="listview" id="firehose_list"></ul>');
+                var when = '';
+                $.each(data, function(i, value){
+                    var text = value.beer + " drank by " + value.username;
+                    if(when != value.when){
+                        when = value.when;
+                        list.append($('<li></li>').text(when).attr('data-role','list-divider'));
+                    }
+                    list.append($('<li></li>').text(text));
+                });
+                $("#firehose_list").replaceWith(list);
+                list.listview();
+                $.mobile.hidePageLoadingMsg();
+            });
+        });
+
+        $('#beers').live('pagebeforeshow',function(event){
+            $.mobile.showPageLoadingMsg();
+            $.getJSON(url + '/userbeers/username/' + username, function(data){
+                var list = $('<ul data-role="listview" id="beers_list"></ul>');
+                var when = '';
+                $.each(data, function(i, value){
+                    var text = value.beer;
+                    if(when != value.when){
+                        when = value.when;
+                        list.append($('<li></li>').text(when).attr('data-role','list-divider'));
+                    }
+                    list.append($('<li></li>').text(text));
+                });
+                $("#beers_list").replaceWith(list);
+                list.listview();
+                $.mobile.hidePageLoadingMsg();
+            });
+        });
+
+        $('#beersearchbutton').live('click', function(event){
+            $.mobile.showPageLoadingMsg();
+            $.getJSON(url + '/beers/name/' + $('#beersearchtext').val(), function(data){
+                var list = $('<ul data-role="listview" id="beerlist"></ul>');
+                $.each(data.data, function(i, value){
+                    var href = $('<a href="#beerinfo" data-rel="dialog">' + value.name + '</a>');
+                    href.bind('click', function(){
+                        activeBeer = value;
+                    });
+                    var beer = $('<li></li>').append(href);
+                    list.append(beer);
+                });
+                $('#beerlist').replaceWith(list);
+                $.mobile.changePage('#foundbeers');
+            })
+        });
+
+        $('#foundbeers').live('pagebeforeshow',function(event){
+            var list = $('#beerlist');
+            list.listview();
+        });
+
+        $('#foundbeers').live('pageshow',function(event){
+            $.mobile.hidePageLoadingMsg();
+        });
+
+        $('#beerinfo').live('pageshow',function(event){
+            $('#beerinfoName').html(activeBeer.name);
+            $('#beerinfoDescription').html(activeBeer.description);
+        });
+
+        $('#drinkit').live('click', function(event){
+            $.post(url + '/beers', {username: username, beerName: activeBeer.name, when: 'March 8th, 2012, 8:16:39 PM'}, function(){
+                $.mobile.changePage('#foundbeers');
+            });
+        });
+
+        $('#settings').live('pageshow',function(event){
+            $('#url').val(url);
+            $('#username').val(username);
+            $('#password').val(password);
+        });
+
+        $('#savesettings').live('click', function(){
+            url = $('#url').val();
+            username = $('#username').val();
+            password = $('#password').val();
+            $.post(url + '/user', {username: username, password: password}, function(data){
+                console.log(data.status);
+                if(data.status == 'success'){
+                    localStorage.setItem('url', url);
+                    localStorage.setItem('username', username);
+                    localStorage.setItem('password', password);
+                    alert("Settings saved.");
+                    $.mobile.changePage('#home');
+                }else{
+                    alert("Failed saving settings.");
+                };
+            }, 'json');
+        });
+
+    </script>
+</head>
+<body>
+
+<div data-role="page" id="home">
+    <div data-role="header">
+        <h1>BeerShift</h1>
+    </div>
+    <div data-role="content">
+        <ul data-role="listview">
+            <li><a href="#drink">Drink beer</a></li>
+            <li><a href="#beers">My beers</a></li>
+            <li><a href="#firehose">Firehose</a></li>
+            <li><a href="#settings">Settings</a></li>
+        </ul>
+    </div>
+</div>
+
+<div data-role="page" id="drink">
+    <div data-role="header">
+        <a href="#home" data-icon="home">Home</a>
+        <h1>Drink beer</h1>
+    </div>
+    <div data-role="content">
+        <label for="beer" class="ui-hidden-accessible">Beer name:</label>
+        <input type="text" id="beersearchtext" value="Radegast" placeholder="Beer name" data-type="search"/>
+        <input type="button" value="Search" id="beersearchbutton">
+    </div>
+</div>
+
+<div data-role="page" id="foundbeers" data-dom-cache="false">
+    <div data-role="header">
+        <a href="#drink" data-icon="back">Drink beer</a>
+        <h1>Available beers</h1>
+    </div>
+    <div data-role="content">
+        <ul data-role="listview" id="beerlist"></ul>
+    </div>
+</div>
+
+<div data-role="page" id="beerinfo">
+    <div data-role="header">
+        <h1>Beer info</h1>
+    </div>
+    <div data-role="content">
+        <h2 id="beerinfoName"></h2>
+        <div id="beerinfoDescription"></div>
+        <input type="button" value="Drink it!" id="drinkit" />
+    </div>
+</div>
+
+<div data-role="page" id="beers">
+    <div data-role="header">
+        <a href="#home" data-icon="home">Home</a>
+        <h1>My beers</h1>
+    </div>
+    <div data-role="content">
+        <ul data-role="listview" id="beers_list">
+        </ul>
+    </div>
+</div>
+
+<div data-role="page" id="firehose">
+    <div data-role="header">
+        <a href="#home" data-icon="home">Home</a>
+        <h1>Firehose</h1>
+    </div>
+    <div data-role="content">
+        <ul data-role="listview" id="firehose_list">
+        </ul>
+    </div>
+</div>
+
+<div data-role="page" id="settings">
+    <div data-role="header">
+        <a href="#home" data-icon="home">Home</a>
+        <h1>Settings</h1>
+    </div>
+    <div data-role="content">
+        <label for="beer">URL:</label>
+        <input type="text" id="url" placeholder="URL"/>
+        <label for="beer">Usename:</label>
+        <input type="text" id="username" placeholder="Username"/>
+        <label for="beer">Password:</label>
+        <input type="text" id="password" placeholder="Password"/>
+        <input type="button" value="Login" id="savesettings">
+    </div>
+</div>
+
+</body>
+</html>
